@@ -3,11 +3,11 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from fastapi.middleware.cors import CORSMiddleware
 
 from .database import Base, SessionLocal, engine, get_db
 from .models import Product
 from .schemas import ProductResponse
-
 
 DEFAULT_PRODUCTS = [
     Product(
@@ -69,6 +69,17 @@ app = FastAPI(
     description="CSC4201 ecommerce catalog microservice",
     version="1.0.0",
     lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ],
+    allow_credentials=False,
+    allow_methods=["GET"],
+    allow_headers=["*"],
 )
 
 
