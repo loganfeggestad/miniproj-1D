@@ -48,6 +48,7 @@ def initialize_database():
 
     db = SessionLocal()
 
+
     try:
         existing_product = db.execute(select(Product)).first()
 
