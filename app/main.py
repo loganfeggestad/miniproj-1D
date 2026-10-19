@@ -62,6 +62,7 @@ def initialize_database():
     finally:
         db.close()
 
+cloud_logger = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -91,7 +92,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-cloud_logger = None
 # app.middleware("http")
 # async def correlation_id_middleware(request: Request, call_next):
 #     corr_id = request.headers.get("X-Correlation-ID")
