@@ -1,9 +1,11 @@
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
+from google.cloud import logging as cloud_logging
+from datetime import datetime, timezone
 
 from .database import Base, SessionLocal, engine, get_db
 from .models import Product
@@ -72,6 +74,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+logging_client = cloud_logging.Client()
+cloud_logger = logging_client.logger("catalog-service")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -83,6 +88,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.add_middleware("http")
+async def correlation_id_middleware(request: Request, call_next):
+    corr_id = request.headers.get("X-Correlation-ID")
+    
+    if not corr_id:
+        return
+    
+    request.state.correlation_id = corr_id
+    
+    response: Response = await call_next(request)
+    
+    response.headers["X-Correlation-ID"] = corr_id
+    
+    cloud_logging.log_struct({
+        "call-type": request.method,
+        "correlation-id": corr_id,
+        "reply-code": response.status_code,
+        "service-id": "checkout-service",
+        "timestamp": datetime.now(timezone.utc).isoformat
+    })
 
 def product_to_response(product: Product) -> ProductResponse:
     return ProductResponse(
