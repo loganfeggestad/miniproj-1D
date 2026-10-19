@@ -105,7 +105,7 @@ async def correlation_id_middleware(request: Request, call_next):
         "call-type": request.method,
         "correlation-id": corr_id,
         "reply-code": response.status_code,
-        "service-id": "checkout-service",
+        "service-id": "catalog-service",
         "timestamp": datetime.now(timezone.utc).isoformat
     })
 
