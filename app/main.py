@@ -11,6 +11,8 @@ from .database import Base, SessionLocal, engine, get_db
 from .models import Product
 from .schemas import ProductResponse
 
+import uuid
+
 DEFAULT_PRODUCTS = [
     Product(
         name="Wireless Mouse",
@@ -98,26 +100,52 @@ async def lifespan(app: FastAPI):
 
     yield
 
-app.middleware("http")
-async def correlation_id_middleware(request: Request, call_next):
+# app.middleware("http")
+# async def correlation_id_middleware(request: Request, call_next):
+#     corr_id = request.headers.get("X-Correlation-ID")
+    
+#     if not corr_id:
+#         return
+    
+#     request.state.correlation_id = corr_id
+    
+#     response: Response = await call_next(request)
+    
+#     response.headers["X-Correlation-ID"] = corr_id
+    
+#     cloud_logging.log_struct({
+#         "call-type": request.method,
+#         "correlation-id": corr_id,
+#         "reply-code": response.status_code,
+#         "service-id": "catalog-service",
+#         "timestamp": datetime.now(timezone.utc).isoformat
+#     })
+    
+@app.middleware("http")
+async def correlation_id_middleware(
+    request: Request,
+    call_next,
+):
     corr_id = request.headers.get("X-Correlation-ID")
-    
+
     if not corr_id:
-        return
-    
+        corr_id = str(uuid.uuid4())
+
     request.state.correlation_id = corr_id
-    
+
     response: Response = await call_next(request)
-    
     response.headers["X-Correlation-ID"] = corr_id
-    
-    cloud_logging.log_struct({
-        "call-type": request.method,
-        "correlation-id": corr_id,
-        "reply-code": response.status_code,
-        "service-id": "catalog-service",
-        "timestamp": datetime.now(timezone.utc).isoformat
-    })
+
+    if cloud_logger is not None:
+        cloud_logger.log_struct({
+            "call_type": request.method,
+            "correlation_id": corr_id,
+            "reply_code": response.status_code,
+            "service_id": "catalog-service",
+            "path": request.url.path,
+        })
+
+    return response
 
 def product_to_response(product: Product) -> ProductResponse:
     return ProductResponse(
