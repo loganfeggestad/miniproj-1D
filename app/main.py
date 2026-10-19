@@ -99,22 +99,21 @@ async def correlation_id_middleware(
 ):
     corr_id = request.headers.get("X-Correlation-ID")
 
-    if not corr_id:
-        return
-
     request.state.correlation_id = corr_id
 
-    response: Response = await call_next(request)
-    response.headers["X-Correlation-ID"] = corr_id
+    response = await call_next(request)
 
-    if cloud_logger is not None:
-        cloud_logger.log_struct({
-            "call_type": request.method,
-            "correlation_id": corr_id,
-            "reply_code": response.status_code,
-            "service_id": "catalog-service",
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        })
+    if corr_id:
+        response.headers["X-Correlation-ID"] = corr_id
+
+        if cloud_logger is not None:
+            cloud_logger.log_struct({
+                "correlation_id": corr_id,
+                "method": request.method,
+                "status_code": response.status_code,
+                "service": "catalog-service",
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            })
 
     return response
 
