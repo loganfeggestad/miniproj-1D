@@ -91,27 +91,6 @@ app.add_middleware(
     allow_methods=["GET"],
     allow_headers=["*"],
 )
-
-# app.middleware("http")
-# async def correlation_id_middleware(request: Request, call_next):
-#     corr_id = request.headers.get("X-Correlation-ID")
-    
-#     if not corr_id:
-#         return
-    
-#     request.state.correlation_id = corr_id
-    
-#     response: Response = await call_next(request)
-    
-#     response.headers["X-Correlation-ID"] = corr_id
-    
-#     cloud_logging.log_struct({
-#         "call-type": request.method,
-#         "correlation-id": corr_id,
-#         "reply-code": response.status_code,
-#         "service-id": "catalog-service",
-#         "timestamp": datetime.now(timezone.utc).isoformat
-#     })
     
 @app.middleware("http")
 async def correlation_id_middleware(
@@ -121,7 +100,7 @@ async def correlation_id_middleware(
     corr_id = request.headers.get("X-Correlation-ID")
 
     if not corr_id:
-        corr_id = str(uuid.uuid4())
+        return
 
     request.state.correlation_id = corr_id
 
@@ -134,7 +113,7 @@ async def correlation_id_middleware(
             "correlation_id": corr_id,
             "reply_code": response.status_code,
             "service_id": "catalog-service",
-            "path": request.url.path,
+            "timestamp": datetime.now(timezone.utc).isoformat()
         })
 
     return response
