@@ -65,7 +65,11 @@ def initialize_database():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global cloud_logger
     initialize_database()
+    
+    logging_client = cloud_logging.Client()
+    cloud_logger = logging_client.logger("catalog-service")
     yield
 
 
@@ -88,18 +92,6 @@ app.add_middleware(
 )
 
 cloud_logger = None
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    global cloud_logger
-
-    initialize_database()
-
-    logging_client = cloud_logging.Client()
-    cloud_logger = logging_client.logger("catalog-service")
-
-    yield
-
 # app.middleware("http")
 # async def correlation_id_middleware(request: Request, call_next):
 #     corr_id = request.headers.get("X-Correlation-ID")
