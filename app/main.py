@@ -74,9 +74,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-logging_client = cloud_logging.Client()
-cloud_logger = logging_client.logger("catalog-service")
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -87,6 +84,19 @@ app.add_middleware(
     allow_methods=["GET"],
     allow_headers=["*"],
 )
+
+cloud_logger = None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global cloud_logger
+
+    initialize_database()
+
+    logging_client = cloud_logging.Client()
+    cloud_logger = logging_client.logger("catalog-service")
+
+    yield
 
 app.add_middleware("http")
 async def correlation_id_middleware(request: Request, call_next):
