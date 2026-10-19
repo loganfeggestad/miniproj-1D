@@ -98,7 +98,7 @@ async def lifespan(app: FastAPI):
 
     yield
 
-app.add_middleware("http")
+app.middleware("http")
 async def correlation_id_middleware(request: Request, call_next):
     corr_id = request.headers.get("X-Correlation-ID")
     
