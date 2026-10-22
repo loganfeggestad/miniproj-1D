@@ -117,6 +117,7 @@ async def correlation_id_middleware(
 
     return response
 
+
 def product_to_response(product: Product) -> ProductResponse:
     return ProductResponse(
         product_id=product.id,
